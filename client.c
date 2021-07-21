@@ -12,69 +12,75 @@
 #include <netdb.h>
 #include "protocol.h"
 
-int main() {
+int main(int argc, char *argv[]) {
+
+    // assign domain name and port
+    domain_name = argv[1];
+    server_port = atoi(argv[2]);
+
     // get the ip of the host 
     getHostIpFromDomain();
 
-    // create continous packet from struct data containing
-    // header and payload information
-    printf("%s\n", "creating packet...");
-    assemblePacketWithPayload("[Bruno Kruse]\0");
-    
     // create socket and send to server
-    printf("%s\n", "connecting to server...");
     connectToServer(server_port, received_ip_from_domain);
-    
-    // send the message
-    printf("%s\n", "sending message...");
-    sendMessage();
-    
+
+    // send payload
+    assemblePacketWithPayload("[Bruno Kruse]\0");
+
     // get response
-    printf("%s\n", "waiting response...");
-    getResponse();
+    getResponse(); // connection reset by peer
     
     return 0;
 }
+
 
 void assemblePacketWithPayload(char *inPayload) {
     char *payload_message;
     payload_message = inPayload;
     
-    // Data *d = malloc(sizeof(Data));
-    data.magic = htons(0xf00d); // endianess
-    data.length = htons(strlen(payload_message)); // dynamically calculate length of payload
-    data.message_type = htons(message_type); // send message type which is 1
-    data.timestamp = htonl((unsigned long long)time(NULL)); // time.h 
-    data.counter = htons(counter); // increment by one each send
-    data.payload_crc16 = crc16((unsigned char *)payload_message, sizeof(payload_message)); // crc16
-    memcpy(data.payload, payload_message, sizeof(data.payload));
+    char message[64] = "[Bruno Kruse]\0";
+    unsigned short payload_crc16_calc = crc16((unsigned char *)message, sizeof(message));
 
-    // calculate size of header_crc16 before payload
-    // TODO: update this to use memcpy for bytestrings
-    sprintf(header_data, "%d%d%i%lli%i%i", data.magic, data.length, data.message_type,
-        data.timestamp, data.counter, data.payload_crc16);
-        
-    char *header_crc;
-    header_crc = header_data;
-    data.header_crc16 = crc16((unsigned char *)header_crc, sizeof(header_crc));
+    Data d = {
+        .magic = htons(0xf00d),
+        .length = htons(strlen(payload_message)),
+        .message_type = htons(1),
+        .timestamp = htonl((unsigned long long)time(NULL)),
+        .counter = htons(1),
+        .payload_crc16 = htons(payload_crc16_calc),
+    };
     
-    // calculate bytestring
-    /*
-    unsigned char *buffer=(char*)malloc(sizeof(data));
-    int i;
+    // TODO: this should be nested struct or union
+    Header h = {
+        .magic = htons(0xf00d),
+        .length = htons(strlen(payload_message)),
+        .message_type = htons(1),
+        .timestamp = htonl((unsigned long long)time(NULL)),
+        .counter = htons(1),
+        .payload_crc16 = htons(payload_crc16_calc)
+    };
 
-    //copying....
-    memcpy(buffer,(const unsigned char*)&data,sizeof(data));
+    int size = sizeof(Header); //get 
+    char buffer_calc[size];
+    char* buffer_char;
+    buffer_char = buffer_calc;
+    memset(buffer_char, 0, size);
+    memcpy(buffer_char, &h, size);
+    d.header_crc16 = crc16((unsigned char *)buffer_char, sizeof(buffer_char));
+    
+    // finally add the payload
+    strncpy(d.payload, message, sizeof(message));
+    d.payload[sizeof(d.payload)] = '\0';
+    
+    // calculate byte string
+    unsigned char *buffer=(unsigned char*)malloc(sizeof(d));
+    memcpy(buffer,(const unsigned char*)&d, sizeof(d));
 
-    //printing..
-    printf("Copied byte array is:\n");
-    for(i=0;i<sizeof(data);i++)
-        printf("%02X ",buffer[i]);
-    printf("\n");
+    // send buffer to server
+    sendMessage(buffer);
 
-    //freeing memory..
     free(buffer);
-    */
+    
 }
 
 void connectToServer(int inPort, char * inIp) {
@@ -101,10 +107,16 @@ void connectToServer(int inPort, char * inIp) {
     }
 }
 
-void sendMessage() {
+void sendMessage(unsigned char *inBuffer) {
     // send the packet
+    // check
+    int i;
+    for(i=0;i<sizeof(Data);i++)
+        printf("%02X ", inBuffer[i]);
+    printf("\n");
+
     int nbytes;
-    if ((nbytes = send(serverfd, &data, sizeof(data), 0)) != sizeof(data)) {
+    if ((nbytes = send(serverfd, inBuffer, sizeof(Data), 0)) != sizeof(Data)) {
         perror("bad write... \n");
         exit(0);
     }
@@ -121,5 +133,5 @@ void getResponse() {
     }
 
    // response confirm, waiting for a 2 if successful
-   printf("\nServer response: %s\n", server_response);
+   printf("Server response: %s\n", server_response);
 }

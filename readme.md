@@ -13,12 +13,13 @@
 ## Compiling && Running
 assuming use of ubuntu 20+ and gcc. simple make file for convenience.
 
-<i>TODO: add args to client for --server_ip, --server_port, --payload<i>
+example:
 
 ```
 make
-./client
+./client localhost 1234
 ```
+
 
 <br>
 
@@ -42,20 +43,14 @@ typedef struct {
 
 ## Serialization
 ```c
-    unsigned char *buffer=(char*)malloc(sizeof(data));
+    unsigned char *buffer=(unsigned char*)malloc(sizeof(d));
+    memcpy(buffer,(const unsigned char*)&d, sizeof(d));
+
+    // debug
     int i;
-
-    //copying....
-    memcpy(buffer,(const unsigned char*)&data,sizeof(data));
-
-    //printing..
-    printf("Copied byte array is:\n");
-    for(i=0;i<sizeof(data);i++)
-        printf("%02X ",buffer[i]);
+    for(i=0;i<sizeof(Data);i++)
+        printf("%02X ", inBuffer[i]);
     printf("\n");
-
-    //freeing memory..
-    free(buffer);
 ```
 
 ```c
@@ -65,10 +60,9 @@ payload
 
 
 ```c
-F0 0D 00 0D 01 00 00 00 60 F7 C5 FD 00 00 00 00 00 00 D5 44 6F D4 5B 42 72 75 6E 6F 20 4B 72 75 73 65 5D 00 25 30 32 58 20 00 25 64 25 64 25 69 25 6C 69 25 69 25 69 00 43 6F 70 69 65 64 20 62 79 74 65 20 61 72 72 61 79 20 69 73 3A 00 63 61 6E 6E 6F 74 20 00 00 00 
+F0 0D 00 0D 00 00 00 00 60 F8 84 0F 00 00 00 00 00 00 32 9B 43 D5 5B 42 72 75 6E 6F 20 4B 72 75 73 65 5D 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
 ```
-//TODO: full message output is garbled
-
+sending this to server
 
 <br>
 

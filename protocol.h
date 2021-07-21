@@ -3,7 +3,7 @@
 
 // datastruct
 //#pragma pack(1)
-typedef struct {
+typedef struct message_struct {
     unsigned short magic; // 16 bits, uint8_t
     unsigned short length; // 16 bits
     unsigned char message_type; // 8 bits
@@ -15,8 +15,17 @@ typedef struct {
 } Data;
 //#pragma pack(0)
 
+typedef struct header_struct {
+    unsigned short magic; // 16 bits, uint8_t
+    unsigned short length; // 16 bits
+    unsigned char message_type; // 8 bits
+    unsigned long long timestamp; // 64 bits
+    unsigned char counter; // 8 bits
+    unsigned short payload_crc16; // 16 bits
+} Header;
+
 // vars
-Data data;
+Data data = { 0 };
 int counter = 0;
 int message_type = 1;
 char header_data[144]; // header
@@ -26,13 +35,13 @@ int serverfd; // server descriptor
 // get dynamic address info
 struct addrinfo hints, *res, *p;
 char ipstr[INET6_ADDRSTRLEN];
-char *domain_name = "localhost"; // challenge.drl.io
+char *domain_name = "localhost";
 char *received_ip_from_domain = "127.0.0.1"; // recalculate if needed
-int server_port = 1234; // 8126
+int server_port = 1234;
 
 void assemblePacketWithPayload(char *inPayload);
 void connectToServer(int inPort, char * inIp);
-void sendMessage();
+void sendMessage(unsigned char *inBuffer);
 void getResponse();
 void getHostIpFromDomain();
 unsigned short crc16(const unsigned char* data_p, unsigned char length);
