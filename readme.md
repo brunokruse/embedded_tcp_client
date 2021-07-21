@@ -17,7 +17,7 @@ example:
 
 ```
 make
-./client localhost 1234 payload
+./client localhost 1234
 ```
 
 
