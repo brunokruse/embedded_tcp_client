@@ -35,46 +35,36 @@ int main(int argc, char *argv[]) {
 
 
 void assemblePacketWithPayload(char *inPayload) {
-    char *payload_message;
-    payload_message = inPayload;
-    
-    char message[64] = "[Bruno Kruse]\0";
-    unsigned short payload_crc16_calc = crc16((unsigned char *)message, sizeof(message));
 
-    Data d = {
-        .magic = htons(0xf00d),
-        .length = htons(strlen(payload_message)),
-        .message_type = htons(1),
-        .timestamp = htonl((unsigned long long)time(NULL)),
-        .counter = htons(1),
-        .payload_crc16 = htons(payload_crc16_calc),
+    unsigned short payload_crc16_calc = crc16((unsigned char *)inPayload, sizeof(inPayload));
+
+    Message m = {
+        .header.magic = htons(0xf00d),
+        .header.length = htons(strlen(inPayload)),
+        .header.message_type = htons(1),
+        .header.timestamp = htonl((unsigned long long)time(NULL)),
+        .header.counter = htons(1),
+        .header.payload_crc16 = htons(payload_crc16_calc),
     };
     
-    // TODO: this should be nested struct or union
-    Header h = {
-        .magic = htons(0xf00d),
-        .length = htons(strlen(payload_message)),
-        .message_type = htons(1),
-        .timestamp = htonl((unsigned long long)time(NULL)),
-        .counter = htons(1),
-        .payload_crc16 = htons(payload_crc16_calc)
-    };
-
-    int size = sizeof(Header); //get 
+    int size = sizeof(m.header); //get 
     char buffer_calc[size];
     char* buffer_char;
     buffer_char = buffer_calc;
     memset(buffer_char, 0, size);
-    memcpy(buffer_char, &h, size);
-    d.header_crc16 = crc16((unsigned char *)buffer_char, sizeof(buffer_char));
+    memcpy(buffer_char, &m.header, size);
+    m.header.header_crc16 = crc16((unsigned char *)buffer_char, sizeof(buffer_char));
     
     // finally add the payload
-    strncpy(d.payload, message, sizeof(message));
-    d.payload[sizeof(d.payload)] = '\0';
+    char message[64];
+    message[0] = '\0';
+    strcat(message, inPayload);
+    strncpy(m.payload.data, message, sizeof(message));
+    m.payload.data[sizeof(m.payload.data)] = '\0';
     
     // calculate byte string
-    unsigned char *buffer=(unsigned char*)malloc(sizeof(d));
-    memcpy(buffer,(const unsigned char*)&d, sizeof(d));
+    unsigned char *buffer=(unsigned char*)malloc(sizeof(m));
+    memcpy(buffer,(const unsigned char*)&m, sizeof(m));
 
     // send buffer to server
     sendMessage(buffer);
@@ -111,12 +101,12 @@ void sendMessage(unsigned char *inBuffer) {
     // send the packet
     // check
     int i;
-    for(i=0;i<sizeof(Data);i++)
+    for(i=0;i<sizeof(Message);i++)
         printf("%02X ", inBuffer[i]);
     printf("\n");
 
     int nbytes;
-    if ((nbytes = send(serverfd, inBuffer, sizeof(Data), 0)) != sizeof(Data)) {
+    if ((nbytes = send(serverfd, inBuffer, sizeof(Message), 0)) != sizeof(Message)) {
         perror("bad write... \n");
         exit(0);
     }

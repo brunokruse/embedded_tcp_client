@@ -17,7 +17,7 @@ example:
 
 ```
 make
-./client localhost 1234
+./client localhost 1234 payload
 ```
 
 
@@ -27,16 +27,24 @@ make
 
 ```c
 //  datastruct
-typedef struct {
-    unsigned short magic; // 16 bits
-    unsigned short length; // 16 bits, uint_16t
-    unsigned char message_type; // 8 bits, uint_t
-    unsigned long long timestamp; // 64 bits, uint64_t
-    unsigned char counter; // 8 bits
-    unsigned short payload_crc16; // 16 bits, uint16_t
-    unsigned short header_crc16; // 16 bits, uint16_t
-    char payload[64]; // 64 bytes
+typedef struct message_struct {
+    char data[64]; // 64 bytes
 } Data;
+
+typedef struct header_struct {
+    unsigned short magic; // 16 bits, uint8_t
+    unsigned short length; // 16 bits
+    unsigned char message_type; // 8 bits
+    unsigned long long timestamp; // 64 bits
+    unsigned char counter; // 8 bits
+    unsigned short payload_crc16; // 16 bits
+    unsigned short header_crc16; // 16 bits
+} Header;
+
+typedef struct full_message {
+    Header header;
+    Data payload;
+} Message;
 ```
 
 <br>

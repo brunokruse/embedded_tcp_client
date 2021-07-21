@@ -2,18 +2,9 @@
 #include <stdlib.h>
 
 // datastruct
-//#pragma pack(1)
 typedef struct message_struct {
-    unsigned short magic; // 16 bits, uint8_t
-    unsigned short length; // 16 bits
-    unsigned char message_type; // 8 bits
-    unsigned long long timestamp; // 64 bits
-    unsigned char counter; // 8 bits
-    unsigned short payload_crc16; // 16 bits
-    unsigned short header_crc16; // 16 bits
-    char payload[64]; // 64 bytes
+    char data[64]; // 64 bytes
 } Data;
-//#pragma pack(0)
 
 typedef struct header_struct {
     unsigned short magic; // 16 bits, uint8_t
@@ -22,15 +13,21 @@ typedef struct header_struct {
     unsigned long long timestamp; // 64 bits
     unsigned char counter; // 8 bits
     unsigned short payload_crc16; // 16 bits
+    unsigned short header_crc16; // 16 bits
 } Header;
+
+typedef struct full_message {
+    Header header;
+    Data payload;
+} Message;
 
 // vars
 Data data = { 0 };
 int counter = 0;
 int message_type = 1;
+char argv_payload[64]; // default
 char header_data[144]; // header
 int serverfd; // server descriptor
-
 
 // get dynamic address info
 struct addrinfo hints, *res, *p;
