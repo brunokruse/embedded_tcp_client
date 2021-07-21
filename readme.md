@@ -1,5 +1,4 @@
 # README
-*Drone Racing League embedded challenge*
 
 <br> 
 
